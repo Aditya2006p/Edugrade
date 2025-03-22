@@ -94,6 +94,7 @@ router.post('/:id/submit', upload.single('submission'), async (req, res) => {
   try {
     const assignmentId = req.params.id;
     const studentId = req.body.studentId;
+    const studentName = req.body.studentName || 'Anonymous Student';
     const submissionText = req.body.text || '';
     let filePath = '';
     
@@ -101,33 +102,64 @@ router.post('/:id/submit', upload.single('submission'), async (req, res) => {
       filePath = req.file.path;
     }
 
-    // In a real app, this would save the submission to a database
+    // Create submission object
+    const submission = {
+      id: Date.now(), // Simple ID generation
+      assignmentId: parseInt(assignmentId) || assignmentId,
+      studentId,
+      studentName,
+      submissionText,
+      filePath: req.file ? req.file.filename : null,
+      submissionDate: new Date(),
+      status: 'pending'
+    };
     
-    // For demo purposes, we'll immediately grade the submission if it's text
+    // Store submission in global array
+    global.submissions.push(submission);
+    
+    // Automatically grade text submissions using AI
     if (submissionText) {
-      // Call AI service to grade the submission
-      const feedback = await gradeSubmission(assignmentId, submissionText);
-      
-      res.status(201).json({
-        status: 'success',
-        message: 'Assignment submitted and graded successfully',
-        data: {
-          assignmentId,
-          studentId,
-          submissionDate: new Date(),
-          feedback
-        }
-      });
+      try {
+        // Call AI service to grade the submission
+        const feedback = await gradeSubmission(assignmentId, submissionText);
+        
+        // Store feedback
+        const feedbackEntry = {
+          id: Date.now(),
+          submissionId: submission.id,
+          assignmentId: submission.assignmentId,
+          studentId: submission.studentId,
+          feedback,
+          submissionDate: submission.submissionDate,
+          gradedDate: new Date()
+        };
+        
+        global.feedback.push(feedbackEntry);
+        
+        // Update submission status
+        submission.status = 'graded';
+        
+        res.status(201).json({
+          status: 'success',
+          message: 'Assignment submitted and graded successfully',
+          data: {
+            submission,
+            feedback: feedbackEntry
+          }
+        });
+      } catch (error) {
+        console.error('Grading error:', error);
+        res.status(201).json({
+          status: 'success',
+          message: 'Assignment submitted successfully, but automatic grading failed',
+          data: submission
+        });
+      }
     } else {
       res.status(201).json({
         status: 'success',
         message: 'Assignment submitted successfully, awaiting grading',
-        data: {
-          assignmentId,
-          studentId,
-          submissionDate: new Date(),
-          filePath: req.file ? req.file.filename : null
-        }
+        data: submission
       });
     }
   } catch (error) {
@@ -143,17 +175,47 @@ router.post('/:id/submit', upload.single('submission'), async (req, res) => {
 // POST grade an assignment (teacher or automated)
 router.post('/:id/grade', async (req, res) => {
   try {
+    const assignmentId = req.params.id;
     const { submissionId, submissionText, rubric } = req.body;
     
+    // Find the submission
+    const submission = global.submissions.find(s => s.id === parseInt(submissionId));
+    
+    if (!submission) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Submission not found'
+      });
+    }
+    
+    // Use submission text from the request or from the stored submission
+    const textToGrade = submissionText || submission.submissionText;
+    
     // Call AI service to grade the submission
-    const feedback = await gradeSubmission(req.params.id, submissionText, rubric);
+    const feedback = await gradeSubmission(assignmentId, textToGrade, rubric);
+    
+    // Create and store feedback
+    const feedbackEntry = {
+      id: Date.now(),
+      submissionId: submission.id,
+      assignmentId: submission.assignmentId,
+      studentId: submission.studentId,
+      feedback,
+      submissionDate: submission.submissionDate,
+      gradedDate: new Date()
+    };
+    
+    global.feedback.push(feedbackEntry);
+    
+    // Update submission status
+    submission.status = 'graded';
     
     res.json({
       status: 'success',
       message: 'Assignment graded successfully',
       data: {
-        submissionId,
-        feedback
+        submission,
+        feedback: feedbackEntry
       }
     });
   } catch (error) {
@@ -164,6 +226,42 @@ router.post('/:id/grade', async (req, res) => {
       error: error.message
     });
   }
+});
+
+// GET submissions for an assignment
+router.get('/:id/submissions', (req, res) => {
+  const assignmentId = req.params.id;
+  
+  // Convert to number if possible for easier comparison
+  const assignmentIdNum = parseInt(assignmentId);
+  const targetId = isNaN(assignmentIdNum) ? assignmentId : assignmentIdNum;
+  
+  // Filter submissions for this assignment
+  const filteredSubmissions = global.submissions.filter(
+    sub => sub.assignmentId === targetId || sub.assignmentId === assignmentId
+  );
+  
+  res.json({
+    status: 'success',
+    message: 'Submissions retrieved successfully',
+    data: filteredSubmissions
+  });
+});
+
+// GET submissions for a specific student
+router.get('/student/:studentId/submissions', (req, res) => {
+  const studentId = req.params.studentId;
+  
+  // Filter submissions for this student
+  const studentSubmissions = global.submissions.filter(
+    submission => submission.studentId === studentId
+  );
+  
+  res.json({
+    status: 'success',
+    message: 'Student submissions retrieved successfully',
+    data: studentSubmissions
+  });
 });
 
 // AI grading function using Google's Generative AI

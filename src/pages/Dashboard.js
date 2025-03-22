@@ -54,9 +54,42 @@ const Dashboard = ({ user }) => {
             ]);
           }
         } else {
-          // For new user accounts, show empty data
-          setSubmissions([]);
-          setFeedback([]);
+          // For real user accounts, fetch actual submissions
+          if (user.role === 'student') {
+            try {
+              // Fetch student's submissions using the new endpoint
+              const submissionsResponse = await fetch(`http://localhost:5001/api/assignments/student/${user.id}/submissions`);
+              const submissionsData = await submissionsResponse.json();
+              
+              if (submissionsData.status === 'success') {
+                setSubmissions(submissionsData.data);
+                
+                // Fetch feedback for graded submissions
+                const gradedSubmissions = submissionsData.data.filter(sub => sub.status === 'graded');
+                const feedbackPromises = gradedSubmissions.map(submission =>
+                  fetch(`http://localhost:5001/api/feedback/submission/${submission.id}`)
+                    .then(res => res.json())
+                );
+                
+                if (feedbackPromises.length > 0) {
+                  const feedbackResponses = await Promise.all(feedbackPromises);
+                  const validFeedback = feedbackResponses
+                    .filter(response => response.status === 'success')
+                    .map(response => response.data);
+                  
+                  setFeedback(validFeedback);
+                }
+              }
+            } catch (submissionError) {
+              console.error('Error fetching student submissions:', submissionError);
+              setSubmissions([]);
+              setFeedback([]);
+            }
+          } else if (user.role === 'teacher') {
+            // For teachers, we don't need to fetch all submissions here
+            // They'll see submissions per assignment in the assignment detail view
+            setSubmissions([]);
+          }
         }
 
       } catch (error) {
@@ -68,7 +101,7 @@ const Dashboard = ({ user }) => {
     };
 
     fetchDashboardData();
-  }, [user.role, user.username]);
+  }, [user.role, user.username, user.id]);
 
   if (loading) {
     return <div className="loading-spinner">Loading dashboard...</div>;
