@@ -173,6 +173,25 @@
   margin-bottom: 0.5rem;
 }
 
+/* File upload styles */
+.file-help {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 4px;
+}
+
+input[type="file"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+input[type="file"]:hover {
+  background-color: #f0f0f0;
+}
+
 /* Responsive */
 @media screen and (max-width: 768px) {
   .form-actions {

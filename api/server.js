@@ -14,6 +14,7 @@ const app = express();
 // In-memory data store (would be replaced by a database in production)
 global.submissions = [];
 global.feedback = [];
+global.assignments = [];
 
 // Middleware
 app.use(cors());

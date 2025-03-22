@@ -21,25 +21,64 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// Configure storage for assignment files (for teachers)
+const assignmentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../data/assignments');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `assignment-${Date.now()}-${file.originalname}`);
+  }
+});
+
+const assignmentUpload = multer({ storage: assignmentStorage });
+
 // Configure Google Generative AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'your-api-key-placeholder');
 
 // GET all assignments
 router.get('/', (req, res) => {
-  // In a real app, this would fetch from a database
+  // Return from our global array if it exists
+  if (global.assignments && global.assignments.length > 0) {
+    return res.json({ 
+      status: 'success',
+      message: 'Assignments retrieved successfully',
+      data: global.assignments
+    });
+  }
+  
+  // Otherwise return default assignments
   res.json({ 
     status: 'success',
     message: 'Assignments retrieved successfully',
     data: [
-      { id: 1, title: 'Math Assignment', description: 'Solve algebra problems', dueDate: '2025-04-01' },
-      { id: 2, title: 'English Essay', description: 'Write a 5-paragraph essay', dueDate: '2025-04-15' }
+      { id: 1, title: 'Math Assignment', description: 'Solve algebra problems', dueDate: '2025-04-01', hasAttachment: false },
+      { id: 2, title: 'English Essay', description: 'Write a 5-paragraph essay', dueDate: '2025-04-15', hasAttachment: false }
     ]
   });
 });
 
 // GET a single assignment
 router.get('/:id', (req, res) => {
-  // In a real app, this would fetch from a database
+  const assignmentId = parseInt(req.params.id);
+  
+  // Check if we have the assignment in our global array
+  if (global.assignments) {
+    const foundAssignment = global.assignments.find(a => a.id === assignmentId);
+    if (foundAssignment) {
+      return res.json({ 
+        status: 'success',
+        message: 'Assignment retrieved successfully',
+        data: foundAssignment
+      });
+    }
+  }
+  
+  // Return default assignment if not found
   res.json({ 
     status: 'success',
     message: 'Assignment retrieved successfully',
@@ -48,6 +87,7 @@ router.get('/:id', (req, res) => {
       title: 'Math Assignment', 
       description: 'Solve algebra problems', 
       dueDate: '2025-04-01',
+      hasAttachment: false,
       rubric: {
         understanding: 'Shows complete understanding of the concepts',
         methodology: 'Uses appropriate methods to solve problems',
@@ -58,14 +98,53 @@ router.get('/:id', (req, res) => {
 });
 
 // POST create a new assignment
-router.post('/', (req, res) => {
-  const { title, description, dueDate, rubric } = req.body;
-  // In a real app, this would save to a database
-  res.status(201).json({ 
-    status: 'success',
-    message: 'Assignment created successfully',
-    data: { id: Date.now(), title, description, dueDate, rubric }
-  });
+router.post('/', assignmentUpload.single('assignmentFile'), (req, res) => {
+  try {
+    const { title, description, dueDate, rubric } = req.body;
+    
+    // Create assignment object
+    const assignment = { 
+      id: Date.now(),
+      title, 
+      description, 
+      dueDate, 
+      rubric: rubric ? JSON.parse(rubric) : null,
+      createdAt: new Date(),
+      hasAttachment: !!req.file
+    };
+    
+    // Add file information if a file was uploaded
+    if (req.file) {
+      assignment.fileInfo = {
+        fileName: req.file.filename,
+        originalName: req.file.originalname,
+        filePath: req.file.path,
+        fileType: req.file.mimetype,
+        fileSize: req.file.size
+      };
+    }
+    
+    // In a real app, this would save to a database
+    // For now, we'll add it to a global assignments array if it doesn't exist
+    if (!global.assignments) {
+      global.assignments = [];
+    }
+    
+    global.assignments.push(assignment);
+    
+    res.status(201).json({ 
+      status: 'success',
+      message: 'Assignment created successfully',
+      data: assignment
+    });
+  } catch (error) {
+    console.error('Error creating assignment:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to create assignment',
+      error: error.message
+    });
+  }
 });
 
 // PUT update an assignment
@@ -271,6 +350,31 @@ router.get('/student/:studentId/submissions', (req, res) => {
     message: 'Student submissions retrieved successfully',
     data: studentSubmissions
   });
+});
+
+// GET assignment file - new endpoint to download assignment files
+router.get('/:id/file', (req, res) => {
+  const assignmentId = parseInt(req.params.id);
+  
+  // Find the assignment in our global array
+  if (!global.assignments) {
+    return res.status(404).json({
+      status: 'error',
+      message: 'Assignment file not found'
+    });
+  }
+  
+  const assignment = global.assignments.find(a => a.id === assignmentId);
+  
+  if (!assignment || !assignment.hasAttachment || !assignment.fileInfo) {
+    return res.status(404).json({
+      status: 'error',
+      message: 'Assignment file not found'
+    });
+  }
+  
+  // Send the file
+  res.download(assignment.fileInfo.filePath, assignment.fileInfo.originalName);
 });
 
 // Updated gradeSubmission function with improved error handling

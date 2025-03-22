@@ -14,6 +14,7 @@ const CreateAssignment = ({ user }) => {
       presentation: 'Work is well-organized and clearly presented'
     }
   });
+  const [assignmentFile, setAssignmentFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -21,6 +22,11 @@ const CreateAssignment = ({ user }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setAssignmentFile(file);
   };
 
   const handleRubricChange = (e) => {
@@ -66,12 +72,24 @@ const CreateAssignment = ({ user }) => {
     setError('');
     
     try {
+      // Create a FormData object for multipart/form-data submission (required for file upload)
+      const submitFormData = new FormData();
+      
+      // Add text fields
+      submitFormData.append('title', formData.title);
+      submitFormData.append('description', formData.description);
+      submitFormData.append('dueDate', formData.dueDate);
+      submitFormData.append('rubric', JSON.stringify(formData.rubric));
+      
+      // Add file if one was selected
+      if (assignmentFile) {
+        submitFormData.append('assignmentFile', assignmentFile);
+      }
+      
+      // Send the request without Content-Type header (browser will set it with boundary)
       const response = await fetch('http://localhost:5001/api/assignments', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+        body: submitFormData
       });
       
       const data = await response.json();
@@ -138,6 +156,20 @@ const CreateAssignment = ({ user }) => {
             onChange={handleChange}
             required
           />
+        </div>
+        
+        <div className="form-group">
+          <label htmlFor="assignmentFile">Assignment File (Optional)</label>
+          <input
+            type="file"
+            id="assignmentFile"
+            name="assignmentFile"
+            onChange={handleFileChange}
+            accept=".pdf,.doc,.docx,.txt"
+          />
+          <p className="file-help">
+            Upload a PDF, Word document, or text file with assignment details or questions
+          </p>
         </div>
         
         <div className="rubric-section">

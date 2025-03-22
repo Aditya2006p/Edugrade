@@ -85,6 +85,31 @@ const AssignmentDetail = ({ user }) => {
       <div className="assignment-card">
         <h2>Assignment Description</h2>
         <p className="description">{assignment.description}</p>
+        
+        {assignment.hasAttachment && (
+          <div className="assignment-file">
+            <h3>Assignment File</h3>
+            <a 
+              href={`http://localhost:5001/api/assignments/${id}/file`} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="download-file-button"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3v12m0 0l-4-4m4 4l4-4M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3"></path>
+              </svg>
+              Download Assignment File
+            </a>
+            <p className="file-info">
+              {assignment.fileInfo?.originalName} 
+              {assignment.fileInfo?.fileSize && (
+                <span className="file-size">
+                  ({Math.round(assignment.fileInfo.fileSize / 1024)} KB)
+                </span>
+              )}
+            </p>
+          </div>
+        )}
       </div>
       
       {Object.keys(assignment.rubric || {}).length > 0 && (
