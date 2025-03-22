@@ -139,9 +139,8 @@ edugrade/
 
 ## 👥 Team
 
-- Aditya Pandey - Full Stack Developer
-- Vivek Negi - Team Leader
-- [Team Member 3] - AI Integration Specialist
+- Aditya Pandey - Full Stack Developer & AI Integration
+- Vivek Negi - Team Leader & AI Integration Specialist
 
 ## 📄 License
 
