@@ -12,18 +12,24 @@ const AssignmentDetail = ({ user }) => {
   useEffect(() => {
     const fetchAssignment = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/assignments/${id}`);
+        const response = await fetch(`http://localhost:5001/api/assignments/${id}`);
         const data = await response.json();
         
         if (data.status === 'success') {
           setAssignment(data.data);
           
-          // For demo purposes, we'll create mock submission data
-          if (user.role === 'teacher') {
+          // Only show mock data for the demo teacher account
+          const isDemoTeacher = user.username === 'teacher1' && user.role === 'teacher';
+          
+          if (isDemoTeacher) {
+            // For demo purposes, create mock submission data
             setSubmissions([
               { id: 101, studentId: 'student1', studentName: 'Alice Johnson', submissionDate: '2025-03-25', status: 'graded' },
               { id: 103, studentId: 'student2', studentName: 'Bob Smith', submissionDate: '2025-03-26', status: 'pending' }
             ]);
+          } else {
+            // For new user accounts, show empty submissions
+            setSubmissions([]);
           }
         } else {
           setError('Failed to load assignment details');
@@ -37,7 +43,7 @@ const AssignmentDetail = ({ user }) => {
     };
 
     fetchAssignment();
-  }, [id, user.role]);
+  }, [id, user.role, user.username]);
 
   if (loading) {
     return <div className="loading">Loading assignment details...</div>;

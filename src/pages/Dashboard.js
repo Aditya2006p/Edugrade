@@ -21,33 +21,42 @@ const Dashboard = ({ user }) => {
           setAssignments(assignmentsData.data);
         }
         
-        // For demo purposes, we'll create mock submission and feedback data
-        if (user.role === 'student') {
-          // Mock submissions data for students
-          setSubmissions([
-            { id: 101, assignmentId: 1, submissionDate: '2025-03-25', status: 'graded' },
-            { id: 102, assignmentId: 2, submissionDate: '2025-03-26', status: 'pending' }
-          ]);
-          
-          // Mock feedback data for students
-          setFeedback([
-            { 
-              id: 201, 
-              submissionId: 101, 
-              assignmentId: 1, 
-              submissionDate: '2025-03-25', 
-              gradedDate: '2025-03-26', 
-              score: 85, 
-              summary: 'Good work with some areas for improvement' 
-            }
-          ]);
-        } else if (user.role === 'teacher') {
-          // Mock submissions data for teachers
-          setSubmissions([
-            { id: 101, assignmentId: 1, studentId: 'student1', studentName: 'Alice Johnson', submissionDate: '2025-03-25', status: 'graded' },
-            { id: 103, assignmentId: 1, studentId: 'student2', studentName: 'Bob Smith', submissionDate: '2025-03-26', status: 'pending' },
-            { id: 104, assignmentId: 2, studentId: 'student1', studentName: 'Alice Johnson', submissionDate: '2025-03-26', status: 'pending' }
-          ]);
+        // Only show mock data for demo accounts (teacher1 and student1)
+        const isDemoAccount = user.username === 'teacher1' || user.username === 'student1';
+        
+        if (isDemoAccount) {
+          // For demo purposes, we'll create mock submission and feedback data
+          if (user.role === 'student') {
+            // Mock submissions data for demo student
+            setSubmissions([
+              { id: 101, assignmentId: 1, submissionDate: '2025-03-25', status: 'graded' },
+              { id: 102, assignmentId: 2, submissionDate: '2025-03-26', status: 'pending' }
+            ]);
+            
+            // Mock feedback data for demo student
+            setFeedback([
+              { 
+                id: 201, 
+                submissionId: 101, 
+                assignmentId: 1, 
+                submissionDate: '2025-03-25', 
+                gradedDate: '2025-03-26', 
+                score: 85, 
+                summary: 'Good work with some areas for improvement' 
+              }
+            ]);
+          } else if (user.role === 'teacher') {
+            // Mock submissions data for demo teacher
+            setSubmissions([
+              { id: 101, assignmentId: 1, studentId: 'student1', studentName: 'Alice Johnson', submissionDate: '2025-03-25', status: 'graded' },
+              { id: 103, assignmentId: 1, studentId: 'student2', studentName: 'Bob Smith', submissionDate: '2025-03-26', status: 'pending' },
+              { id: 104, assignmentId: 2, studentId: 'student1', studentName: 'Alice Johnson', submissionDate: '2025-03-26', status: 'pending' }
+            ]);
+          }
+        } else {
+          // For new user accounts, show empty data
+          setSubmissions([]);
+          setFeedback([]);
         }
 
       } catch (error) {
@@ -59,7 +68,7 @@ const Dashboard = ({ user }) => {
     };
 
     fetchDashboardData();
-  }, [user.role]);
+  }, [user.role, user.username]);
 
   if (loading) {
     return <div className="loading-spinner">Loading dashboard...</div>;
