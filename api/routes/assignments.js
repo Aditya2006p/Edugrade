@@ -536,11 +536,11 @@ async function gradeSubmission(submissionText, rubric) {
       }
       
       // Get the Gemini model
-      const model = global.genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = global.genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
       
       // Generate content with timeout
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('AI request timed out after 15 seconds')), 15000)
+        setTimeout(() => reject(new Error('AI request timed out after 25 seconds')), 25000)
       );
       
       const generatePromise = model.generateContent(prompt);

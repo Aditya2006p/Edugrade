@@ -141,7 +141,7 @@ async function generatePersonalizedFeedback(
     `;
     
     // Get the Gemini model
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
     
     // Generate content
     const result = await model.generateContent(prompt);

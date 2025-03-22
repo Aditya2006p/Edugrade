@@ -7,6 +7,11 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Load environment variables
 dotenv.config();
+console.log('Environment variables loaded:');
+console.log('PORT:', process.env.PORT);
+console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
+console.log('GEMINI_API_KEY:', process.env.GEMINI_API_KEY ? 'Set (starts with: ' + process.env.GEMINI_API_KEY.substring(0, 5) + '...)' : 'Not set');
+console.log('NODE_ENV:', process.env.NODE_ENV);
 
 // Initialize express app
 const app = express();
@@ -34,7 +39,7 @@ try {
     // Test the API key by making a simple request
     (async () => {
       try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
         await model.generateContent('Hello, testing API connection');
         console.log('✅ Gemini API key verified successfully');
       } catch (error) {
@@ -83,6 +88,7 @@ const PORT = process.env.PORT || 5000;
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`API available at http://localhost:${PORT}/api/health`);
 });
 
 // Connect to MongoDB (if needed in the future)
