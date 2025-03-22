@@ -33,7 +33,7 @@ try {
     // Test the API key by making a simple request
     (async () => {
       try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
         await model.generateContent('Hello, testing API connection');
         console.log('✅ Gemini API key verified successfully');
       } catch (error) {

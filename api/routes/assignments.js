@@ -311,7 +311,7 @@ async function gradeSubmission(submissionText, rubric) {
       }
       
       // Get the Gemini model
-      const model = global.genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+      const model = global.genAI.getGenerativeModel({ model: 'gemini-pro' });
       
       // Generate content with timeout
       const timeoutPromise = new Promise((_, reject) => 
