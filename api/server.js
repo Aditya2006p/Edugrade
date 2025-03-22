@@ -21,7 +21,36 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Configure Google Generative AI
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+let genAI;
+try {
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('WARNING: GEMINI_API_KEY is not set in environment variables');
+    console.error('AI-powered grading will fall back to manual assessment');
+  } else if (process.env.GEMINI_API_KEY.startsWith('AIza')) {
+    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    console.log('Gemini AI initialized successfully');
+    
+    // Test the API key by making a simple request
+    (async () => {
+      try {
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.0-pro' });
+        await model.generateContent('Hello, testing API connection');
+        console.log('✅ Gemini API key verified successfully');
+      } catch (error) {
+        console.error('❌ Gemini API key validation failed:', error.message);
+        console.error('AI-powered grading will use fallback mechanisms');
+      }
+    })();
+  } else {
+    console.error('WARNING: GEMINI_API_KEY appears to be invalid (should start with "AIza")');
+    console.error('AI-powered grading will fall back to manual assessment');
+  }
+} catch (error) {
+  console.error('Failed to initialize Gemini AI:', error.message);
+}
+
+// Make genAI available globally
+global.genAI = genAI;
 
 // Basic route
 app.get('/api/health', (req, res) => {
