@@ -17,7 +17,7 @@ const SubmitAssignment = ({ user }) => {
   useEffect(() => {
     const fetchAssignment = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/assignments/${id}`);
+        const response = await fetch(`http://localhost:5001/api/assignments/${id}`);
         const data = await response.json();
         
         if (data.status === 'success') {
@@ -67,7 +67,7 @@ const SubmitAssignment = ({ user }) => {
         formData.append('submission', file);
       }
       
-      const response = await fetch(`http://localhost:5000/api/assignments/${id}/submit`, {
+      const response = await fetch(`http://localhost:5001/api/assignments/${id}/submit`, {
         method: 'POST',
         body: formData
       });

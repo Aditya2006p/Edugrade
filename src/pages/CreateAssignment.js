@@ -66,7 +66,7 @@ const CreateAssignment = ({ user }) => {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:5000/api/assignments', {
+      const response = await fetch('http://localhost:5001/api/assignments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
