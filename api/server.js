@@ -11,6 +11,10 @@ dotenv.config();
 // Initialize express app
 const app = express();
 
+// In-memory data store (would be replaced by a database in production)
+global.submissions = [];
+global.feedback = [];
+
 // Middleware
 app.use(cors());
 app.use(express.json());

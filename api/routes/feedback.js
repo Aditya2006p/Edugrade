@@ -7,34 +7,47 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'your-api-key
 
 // GET feedback for a submission
 router.get('/submission/:id', (req, res) => {
-  // In a real app, this would fetch from a database
-  res.json({
-    status: 'success',
-    message: 'Feedback retrieved successfully',
-    data: {
-      submissionId: req.params.id,
-      assignmentId: 1,
-      studentId: 'student123',
-      feedback: {
-        understanding: {
-          score: 8,
-          comments: 'Strong understanding of core concepts with minor misconceptions.'
+  const submissionId = parseInt(req.params.id);
+  
+  // Find feedback for this submission
+  const feedbackEntry = global.feedback.find(f => f.submissionId === submissionId);
+  
+  if (feedbackEntry) {
+    res.json({
+      status: 'success',
+      message: 'Feedback retrieved successfully',
+      data: feedbackEntry
+    });
+  } else {
+    // Fallback to mock data if no feedback found
+    res.json({
+      status: 'success',
+      message: 'Feedback retrieved successfully',
+      data: {
+        submissionId: req.params.id,
+        assignmentId: 1,
+        studentId: 'student123',
+        feedback: {
+          understanding: {
+            score: 8,
+            comments: 'Strong understanding of core concepts with minor misconceptions.'
+          },
+          methodology: {
+            score: 7,
+            comments: 'Good approach but could improve efficiency.'
+          },
+          presentation: {
+            score: 9,
+            comments: 'Well-organized and clearly presented work.'
+          },
+          overallFeedback: 'Good work overall. Focus on improving the methodology section by applying the concepts we discussed in class. Your presentation is excellent.',
+          totalScore: 80
         },
-        methodology: {
-          score: 7,
-          comments: 'Good approach but could improve efficiency.'
-        },
-        presentation: {
-          score: 9,
-          comments: 'Well-organized and clearly presented work.'
-        },
-        overallFeedback: 'Good work overall. Focus on improving the methodology section by applying the concepts we discussed in class. Your presentation is excellent.',
-        totalScore: 80
-      },
-      submissionDate: '2025-03-15T10:30:00Z',
-      gradedDate: '2025-03-16T14:20:00Z'
-    }
-  });
+        submissionDate: '2025-03-15T10:30:00Z',
+        gradedDate: '2025-03-16T14:20:00Z'
+      }
+    });
+  }
 });
 
 // POST generate custom feedback

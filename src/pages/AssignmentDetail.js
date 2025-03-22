@@ -12,23 +12,38 @@ const AssignmentDetail = ({ user }) => {
   useEffect(() => {
     const fetchAssignment = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/api/assignments/${id}`);
-        const data = await response.json();
+        // Fetch assignment details
+        const assignmentResponse = await fetch(`http://localhost:5001/api/assignments/${id}`);
+        const assignmentData = await assignmentResponse.json();
         
-        if (data.status === 'success') {
-          setAssignment(data.data);
+        if (assignmentData.status === 'success') {
+          setAssignment(assignmentData.data);
           
           // Only show mock data for the demo teacher account
+          // For real teacher accounts, fetch actual submissions
           const isDemoTeacher = user.username === 'teacher1' && user.role === 'teacher';
           
           if (isDemoTeacher) {
-            // For demo purposes, create mock submission data
+            // For demo purposes, show mock submission data
             setSubmissions([
               { id: 101, studentId: 'student1', studentName: 'Alice Johnson', submissionDate: '2025-03-25', status: 'graded' },
               { id: 103, studentId: 'student2', studentName: 'Bob Smith', submissionDate: '2025-03-26', status: 'pending' }
             ]);
+          } else if (user.role === 'teacher') {
+            // For real teacher accounts, fetch actual submissions
+            try {
+              const submissionsResponse = await fetch(`http://localhost:5001/api/assignments/${id}/submissions`);
+              const submissionsData = await submissionsResponse.json();
+              
+              if (submissionsData.status === 'success') {
+                setSubmissions(submissionsData.data);
+              }
+            } catch (submissionError) {
+              console.error('Error fetching submissions:', submissionError);
+              setSubmissions([]);
+            }
           } else {
-            // For new user accounts, show empty submissions
+            // For student accounts, no need to show submissions
             setSubmissions([]);
           }
         } else {

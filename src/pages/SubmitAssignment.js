@@ -58,6 +58,7 @@ const SubmitAssignment = ({ user }) => {
     try {
       const formData = new FormData();
       formData.append('studentId', user.id);
+      formData.append('studentName', user.name);
       
       if (submissionText) {
         formData.append('text', submissionText);
