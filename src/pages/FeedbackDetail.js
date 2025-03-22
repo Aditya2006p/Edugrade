@@ -5,17 +5,49 @@ import '../styles/FeedbackDetail.css';
 const FeedbackDetail = ({ user }) => {
   const { id } = useParams();
   const [feedback, setFeedback] = useState(null);
+  const [submission, setSubmission] = useState(null);
+  const [assignment, setAssignment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchFeedback = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/api/feedback/submission/${id}`);
-        const data = await response.json();
+        // Fetch feedback
+        const feedbackResponse = await fetch(`http://localhost:5001/api/feedback/submission/${id}`);
+        const feedbackData = await feedbackResponse.json();
         
-        if (data.status === 'success') {
-          setFeedback(data.data);
+        if (feedbackData.status === 'success') {
+          setFeedback(feedbackData.data);
+          
+          // Fetch assignment info if we have assignmentId
+          if (feedbackData.data.assignmentId) {
+            try {
+              const assignmentResponse = await fetch(`http://localhost:5001/api/assignments/${feedbackData.data.assignmentId}`);
+              const assignmentData = await assignmentResponse.json();
+              if (assignmentData.status === 'success') {
+                setAssignment(assignmentData.data);
+              }
+            } catch (assignmentError) {
+              console.error('Error fetching assignment details:', assignmentError);
+            }
+          }
+          
+          // Fetch submission if available
+          if (feedbackData.data.submissionId) {
+            try {
+              // This is just a placeholder as we don't have a direct endpoint to get a submission by ID
+              // In a real app, you'd fetch from an endpoint like:
+              // const submissionResponse = await fetch(`http://localhost:5001/api/submissions/${feedbackData.data.submissionId}`);
+              setSubmission({
+                id: feedbackData.data.submissionId,
+                assignmentId: feedbackData.data.assignmentId,
+                submissionDate: feedbackData.data.submissionDate
+              });
+            } catch (submissionError) {
+              console.error('Error fetching submission details:', submissionError);
+            }
+          }
         } else {
           setError('Failed to load feedback details');
         }
@@ -27,8 +59,16 @@ const FeedbackDetail = ({ user }) => {
       }
     };
 
-    fetchFeedback();
+    fetchData();
   }, [id]);
+
+  const getGradeLabel = (score) => {
+    if (score >= 90) return 'Excellent';
+    if (score >= 80) return 'Very Good';
+    if (score >= 70) return 'Good';
+    if (score >= 60) return 'Satisfactory';
+    return 'Needs Improvement';
+  };
 
   if (loading) {
     return <div className="loading">Loading feedback...</div>;
@@ -38,42 +78,163 @@ const FeedbackDetail = ({ user }) => {
     return <div className="error">{error || 'Feedback not found'}</div>;
   }
 
+  // Process feedback data to handle different formats from the enhanced grading
+  const totalScore = feedback.feedback.totalScore || 0;
+  const overallFeedback = feedback.feedback.overallFeedback || '';
+  const rubricFeedback = feedback.feedback.rubricFeedback || {};
+  const keyStrengths = feedback.feedback.keyStrengths || [];
+  const improvementAreas = feedback.feedback.improvementAreas || [];
+  const learningRecommendations = feedback.feedback.learningRecommendations || [];
+  const differentialAnalysis = feedback.feedback.differentialAnalysis || {};
+  
+  // Handle legacy feedback format
+  const legacyFeedback = Object.entries(feedback.feedback)
+    .filter(([key]) => 
+      key !== 'totalScore' && 
+      key !== 'overallFeedback' && 
+      key !== 'rubricFeedback' &&
+      key !== 'keyStrengths' &&
+      key !== 'improvementAreas' &&
+      key !== 'learningRecommendations' &&
+      key !== 'differentialAnalysis' &&
+      key !== 'isAIFallback' &&
+      key !== 'generatedAt'
+    );
+  
   return (
     <div className="feedback-detail-container">
       <div className="feedback-header">
         <div className="header-content">
-          <h1>Feedback for Assignment</h1>
+          <h1>Assignment Feedback</h1>
           <div className="assignment-title">
-            Math Assignment
+            {assignment?.title || 'Assignment'}
           </div>
           <div className="submission-meta">
             <span>Submitted: {new Date(feedback.submissionDate).toLocaleDateString()}</span>
             <span>Graded: {new Date(feedback.gradedDate).toLocaleDateString()}</span>
+            {feedback.feedback.isAIFallback && (
+              <span className="ai-badge">AI-Assisted</span>
+            )}
           </div>
         </div>
         <div className="score-container">
-          <div className="score">{feedback.feedback.totalScore}%</div>
-          <div className="score-label">Overall Score</div>
-        </div>
-      </div>
-      
-      <div className="feedback-cards">
-        {Object.entries(feedback.feedback).filter(([key]) => key !== 'totalScore' && key !== 'overallFeedback').map(([category, details]) => (
-          <div key={category} className="feedback-card">
-            <div className="feedback-card-header">
-              <h2>{category.charAt(0).toUpperCase() + category.slice(1).replace(/([A-Z])/g, ' $1')}</h2>
-              <div className="category-score">{details.score}/10</div>
-            </div>
-            <p className="feedback-comments">{details.comments}</p>
+          <div className="score-circle">
+            <div className="score-value">{totalScore}%</div>
+            <div className="score-label">{getGradeLabel(totalScore)}</div>
           </div>
-        ))}
+        </div>
       </div>
       
-      <div className="overall-feedback">
-        <h2>Overall Feedback</h2>
-        <div className="feedback-content">
-          <p>{feedback.feedback.overallFeedback}</p>
+      <div className="feedback-content">
+        <div className="feedback-section">
+          <h2>Overall Assessment</h2>
+          <div className="overall-feedback">
+            <p>{overallFeedback}</p>
+          </div>
         </div>
+        
+        {Object.keys(rubricFeedback).length > 0 ? (
+          // Enhanced feedback format
+          <div className="feedback-section">
+            <h2>Rubric Assessment</h2>
+            <div className="rubric-cards">
+              {Object.entries(rubricFeedback).map(([criterion, { score, comments, strengths, improvements }]) => (
+                <div key={criterion} className="rubric-card">
+                  <div className="rubric-card-header">
+                    <h3>{criterion}</h3>
+                    <div className={`criterion-score score-${Math.floor(score/10)}`}>
+                      {score}/100
+                    </div>
+                  </div>
+                  <div className="rubric-card-body">
+                    <p className="rubric-comments">{comments}</p>
+                    
+                    {strengths && (
+                      <div className="rubric-strengths">
+                        <h4>Strengths</h4>
+                        <p>{strengths}</p>
+                      </div>
+                    )}
+                    
+                    {improvements && (
+                      <div className="rubric-improvements">
+                        <h4>Areas for Improvement</h4>
+                        <p>{improvements}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          // Legacy feedback format
+          <div className="feedback-section">
+            <h2>Detailed Feedback</h2>
+            <div className="legacy-feedback-cards">
+              {legacyFeedback.map(([category, details]) => (
+                <div key={category} className="legacy-feedback-card">
+                  <div className="feedback-card-header">
+                    <h3>{category.charAt(0).toUpperCase() + category.slice(1).replace(/([A-Z])/g, ' $1')}</h3>
+                    <div className="category-score">{details.score}/100</div>
+                  </div>
+                  <p className="feedback-comments">{details.comments}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {keyStrengths.length > 0 && (
+          <div className="feedback-section">
+            <h2>Key Strengths</h2>
+            <ul className="strengths-list">
+              {keyStrengths.map((strength, index) => (
+                <li key={index} className="strength-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  {strength}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        {improvementAreas.length > 0 && (
+          <div className="feedback-section">
+            <h2>Areas for Improvement</h2>
+            <ul className="improvements-list">
+              {improvementAreas.map((improvement, index) => (
+                <li key={index} className="improvement-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12" y2="16"></line>
+                  </svg>
+                  {improvement}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
+        {learningRecommendations.length > 0 && (
+          <div className="feedback-section">
+            <h2>Learning Recommendations</h2>
+            <ul className="recommendations-list">
+              {learningRecommendations.map((recommendation, index) => (
+                <li key={index} className="recommendation-item">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                  {recommendation}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
       
       <div className="ai-feedback-note">
@@ -96,6 +257,11 @@ const FeedbackDetail = ({ user }) => {
             <Link to="/" className="back-button">
               Back to Dashboard
             </Link>
+            {assignment && (
+              <Link to={`/assignments/${assignment.id}/analytics`} className="analytics-button">
+                View Class Analytics
+              </Link>
+            )}
             <button className="edit-button">
               Edit Feedback
             </button>

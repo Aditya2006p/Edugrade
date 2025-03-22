@@ -79,6 +79,14 @@ const AssignmentDetail = ({ user }) => {
               Submit Assignment
             </Link>
           )}
+          {user.role === 'teacher' && (
+            <Link to={`/assignments/${id}/analytics`} className="analytics-button">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 20V10M12 20V4M6 20v-6"></path>
+              </svg>
+              Class Analytics
+            </Link>
+          )}
         </div>
       </div>
       
@@ -130,6 +138,9 @@ const AssignmentDetail = ({ user }) => {
         <div className="submissions-section">
           <div className="section-header">
             <h2>Student Submissions</h2>
+            <Link to={`/assignments/${id}/analytics`} className="view-analytics-link">
+              View Detailed Analytics
+            </Link>
           </div>
           
           {submissions.length === 0 ? (

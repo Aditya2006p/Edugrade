@@ -7,6 +7,7 @@ import CreateAssignment from './pages/CreateAssignment';
 import AssignmentDetail from './pages/AssignmentDetail';
 import SubmitAssignment from './pages/SubmitAssignment';
 import FeedbackDetail from './pages/FeedbackDetail';
+import TeacherAnalytics from './pages/TeacherAnalytics';
 import Navbar from './components/Navbar';
 import './styles/App.css';
 
@@ -51,6 +52,7 @@ const App = () => {
             <Route path="/assignments/create" element={user?.role === 'teacher' ? <CreateAssignment user={user} /> : <Navigate to="/" />} />
             <Route path="/assignments/:id" element={user ? <AssignmentDetail user={user} /> : <Navigate to="/login" />} />
             <Route path="/assignments/:id/submit" element={user?.role === 'student' ? <SubmitAssignment user={user} /> : <Navigate to="/" />} />
+            <Route path="/assignments/:id/analytics" element={user?.role === 'teacher' ? <TeacherAnalytics user={user} /> : <Navigate to="/" />} />
             <Route path="/feedback/:id" element={user ? <FeedbackDetail user={user} /> : <Navigate to="/login" />} />
           </Routes>
         </main>

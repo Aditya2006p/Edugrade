@@ -1,0 +1,365 @@
+.teacher-analytics-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.analytics-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.analytics-header h1 {
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.assignment-meta {
+  color: var(--light-text);
+  font-size: 0.9rem;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 992px) {
+  .analytics-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: 
+      "distribution submissions"
+      "insights submissions";
+  }
+  
+  .grade-distribution-section {
+    grid-area: distribution;
+  }
+  
+  .submissions-section {
+    grid-area: submissions;
+  }
+  
+  .insights-section {
+    grid-area: insights;
+  }
+}
+
+section {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+section h2 {
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+/* Grade Distribution Chart */
+.grade-distribution-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.donut-chart {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: #f0f0f0;
+}
+
+.donut-segment {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color) calc((var(--end-percentage) - var(--start-percentage)) * 1%),
+    #0000 0
+  );
+  transform: rotate(calc(var(--start-percentage) * 3.6deg));
+  transform-origin: center;
+}
+
+.donut-hole {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  height: 70%;
+  background-color: white;
+  border-radius: 50%;
+}
+
+.grade-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-label {
+  font-size: 0.85rem;
+}
+
+.empty-chart {
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-style: italic;
+  color: var(--light-text);
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+}
+
+/* Submissions Table */
+.submissions-table-container {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.submissions-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.submissions-table th {
+  background-color: var(--primary-light);
+  color: var(--text-color);
+  font-weight: 500;
+  text-align: left;
+  padding: 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.submissions-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.submissions-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.pending-row {
+  background-color: #fafafa;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.graded {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.pending {
+  background-color: #fff8e1;
+  color: #ff8f00;
+}
+
+.view-feedback-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.view-feedback-link:hover {
+  text-decoration: underline;
+}
+
+.batch-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.batch-grade-button {
+  padding: 0.75rem 1.25rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.batch-grade-button:hover {
+  background-color: var(--secondary-color);
+}
+
+.batch-grade-button:disabled {
+  background-color: #e0e0e0;
+  color: #9e9e9e;
+  cursor: not-allowed;
+}
+
+.empty-message {
+  padding: 3rem 0;
+  text-align: center;
+  color: var(--light-text);
+  font-style: italic;
+}
+
+/* Class Insights */
+.class-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.insights-section h3 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+}
+
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background-color: #f5f5f5;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--light-text);
+  margin-top: 0.25rem;
+}
+
+.trends-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .trends-container {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.trend-column h4 {
+  margin-bottom: 0.75rem;
+  color: var(--text-color);
+}
+
+.trend-list {
+  padding-left: 1.5rem;
+}
+
+.trend-list li {
+  margin-bottom: 0.5rem;
+}
+
+.trend-list.strengths li {
+  color: #2e7d32;
+}
+
+.trend-list.weaknesses li {
+  color: #c62828;
+}
+
+.empty-trend {
+  font-style: italic;
+  color: var(--light-text);
+}
+
+.recommendation-card {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.recommendation-card h4 {
+  color: var(--text-color);
+  margin-bottom: 0.75rem;
+}
+
+.recommendation-card p {
+  margin-bottom: 1.25rem;
+}
+
+.action-list {
+  padding-left: 1.5rem;
+}
+
+.action-list li {
+  margin-bottom: 0.5rem;
+}
+
+/* Grading Progress */
+.grading-progress {
+  background-color: #f5f5f5;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.progress-bar {
+  background-color: #e0e0e0;
+  height: 8px;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background-color: var(--primary-color);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Error Message */
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+} 

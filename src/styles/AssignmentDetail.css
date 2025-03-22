@@ -15,10 +15,9 @@
 
 .assignment-meta {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 1.5rem;
-  color: var(--light-text);
-  font-size: 0.9rem;
+  margin-top: 0.5rem;
 }
 
 .assignment-due-date {
@@ -336,4 +335,50 @@
 .file-size {
   margin-left: 5px;
   color: #888;
+}
+
+.submit-button, .analytics-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.6rem 1.2rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.submit-button:hover, .analytics-button:hover {
+  background-color: var(--secondary-color);
+}
+
+.analytics-button {
+  background-color: #673AB7;
+}
+
+.analytics-button:hover {
+  background-color: #5E35B1;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.view-analytics-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.view-analytics-link:hover {
+  text-decoration: underline;
 } 
