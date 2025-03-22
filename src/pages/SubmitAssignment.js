@@ -1,6 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import '../styles/SubmitAssignment.css';
+
+// Add PDF viewer components
+const PdfPreview = ({ fileUrl }) => {
+  return (
+    <div className="pdf-preview-container">
+      <iframe 
+        src={fileUrl} 
+        title="Assignment PDF" 
+        className="pdf-viewer"
+      />
+    </div>
+  );
+};
 
 const SubmitAssignment = ({ user }) => {
   const { id } = useParams();
@@ -16,6 +29,8 @@ const SubmitAssignment = ({ user }) => {
   const [preliminaryScore, setPreliminaryScore] = useState(null);
   const [preliminaryFeedback, setPreliminaryFeedback] = useState(null);
   const [scoringLoading, setScoringLoading] = useState(false);
+  const [showAssignmentFile, setShowAssignmentFile] = useState(false);
+  const assignmentFileRef = useRef(null);
 
   // Fetch assignment details
   useEffect(() => {
@@ -58,6 +73,10 @@ const SubmitAssignment = ({ user }) => {
       setPreliminaryScore(null);
       setPreliminaryFeedback(null);
     }
+  };
+
+  const toggleAssignmentFile = () => {
+    setShowAssignmentFile(!showAssignmentFile);
   };
 
   const handlePreview = async () => {
@@ -182,6 +201,9 @@ const SubmitAssignment = ({ user }) => {
     return <div className="error">Assignment not found</div>;
   }
 
+  const assignmentFileUrl = assignment.hasAttachment ? 
+    `http://localhost:5001/api/assignments/${id}/file` : null;
+
   return (
     <div className="submit-assignment-container">
       <h1>Submit Assignment</h1>
@@ -192,18 +214,45 @@ const SubmitAssignment = ({ user }) => {
         
         {assignment.hasAttachment && (
           <div className="assignment-file">
-            <h3>Assignment File</h3>
-            <a 
-              href={`http://localhost:5001/api/assignments/${id}/file`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="download-file-button"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3v12m0 0l-4-4m4 4l4-4M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3"></path>
-              </svg>
-              Download Assignment File
-            </a>
+            <h3>Assignment Questions</h3>
+            <div className="assignment-file-actions">
+              <button 
+                className="view-questions-button"
+                onClick={toggleAssignmentFile}
+              >
+                {showAssignmentFile ? 'Hide Questions' : 'View Questions'}
+              </button>
+              <a 
+                href={assignmentFileUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="download-file-button"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3v12m0 0l-4-4m4 4l4-4M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3"></path>
+                </svg>
+                Download Assignment File
+              </a>
+            </div>
+            
+            {showAssignmentFile && (
+              <div className="assignment-file-preview" ref={assignmentFileRef}>
+                {assignment.fileInfo?.fileType?.includes('pdf') ? (
+                  <PdfPreview fileUrl={assignmentFileUrl} />
+                ) : (
+                  <div className="non-pdf-preview">
+                    <p>This assignment includes a file that can't be previewed directly.</p> 
+                    <p>Please download the file to view the questions.</p>
+                    <p className="file-info">
+                      <strong>File:</strong> {assignment.fileInfo?.originalName}
+                      {assignment.fileInfo?.fileSize && (
+                        <span> ({Math.round(assignment.fileInfo.fileSize / 1024)} KB)</span>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -337,4 +386,4 @@ const SubmitAssignment = ({ user }) => {
   );
 };
 
-export default SubmitAssignment; 
+export default SubmitAssignment;

@@ -387,7 +387,7 @@ router.get('/student/:studentId/submissions', (req, res) => {
   });
 });
 
-// GET assignment file - new endpoint to download assignment files
+// GET assignment file - enhanced endpoint to download assignment files
 router.get('/:id/file', (req, res) => {
   const assignmentId = parseInt(req.params.id);
   
@@ -408,7 +408,14 @@ router.get('/:id/file', (req, res) => {
     });
   }
   
-  // Send the file
+  // For PDF files, set proper headers for inline display
+  if (assignment.fileInfo.fileType === 'application/pdf') {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${assignment.fileInfo.originalName}"`);
+    return fs.createReadStream(assignment.fileInfo.filePath).pipe(res);
+  }
+  
+  // For other file types, use download
   res.download(assignment.fileInfo.filePath, assignment.fileInfo.originalName);
 });
 
