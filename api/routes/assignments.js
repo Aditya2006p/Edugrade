@@ -175,6 +175,7 @@ router.post('/:id/submit', upload.single('submission'), async (req, res) => {
     const studentId = req.body.studentId;
     const studentName = req.body.studentName || 'Anonymous Student';
     const submissionText = req.body.text || '';
+    const preliminaryScoreData = req.body.preliminaryScore ? JSON.parse(req.body.preliminaryScore) : null;
     let filePath = '';
     
     if (req.file) {
@@ -195,6 +196,40 @@ router.post('/:id/submit', upload.single('submission'), async (req, res) => {
     
     // Store submission in global array
     global.submissions.push(submission);
+    
+    // If we have preliminary score data, use it directly
+    if (preliminaryScoreData && preliminaryScoreData.feedback) {
+      console.log(`Using preliminary score for student ${studentId} on assignment ${assignmentId}`);
+      
+      // Create feedback entry from preliminary data
+      const feedbackEntry = {
+        id: Date.now(),
+        submissionId: submission.id,
+        assignmentId: submission.assignmentId,
+        studentId: submission.studentId,
+        feedback: preliminaryScoreData.feedback,
+        submissionDate: submission.submissionDate,
+        gradedDate: new Date(),
+        gradingMethod: preliminaryScoreData.feedback.isAIFallback ? 'fallback' : 'ai',
+        isPreliminary: true
+      };
+      
+      global.feedback.push(feedbackEntry);
+      
+      // Update submission status
+      submission.status = 'graded';
+      
+      // Return successful response
+      return res.status(201).json({
+        status: 'success',
+        message: 'Assignment submitted and graded successfully',
+        data: {
+          submission,
+          feedback: feedbackEntry,
+          usedPreliminaryScore: true
+        }
+      });
+    }
     
     // Automatically grade text submissions using AI
     if (submissionText) {
@@ -375,6 +410,85 @@ router.get('/:id/file', (req, res) => {
   
   // Send the file
   res.download(assignment.fileInfo.filePath, assignment.fileInfo.originalName);
+});
+
+// POST generate a preview score for an assignment
+router.post('/:id/preview-score', async (req, res) => {
+  try {
+    const assignmentId = req.params.id;
+    const { text, studentId, studentName } = req.body;
+    
+    if (!text) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Submission text is required for preview scoring'
+      });
+    }
+    
+    // Find the assignment to get the rubric
+    let assignment;
+    
+    if (global.assignments) {
+      assignment = global.assignments.find(a => a.id === parseInt(assignmentId));
+    }
+    
+    // If not found in our global store, use default rubric
+    const rubric = assignment?.rubric || {
+      'Content Quality': 'Assess the depth, clarity, and relevance of the content',
+      'Organization': 'Evaluate the structure and flow of ideas',
+      'Grammar & Mechanics': 'Check for proper grammar, spelling, and punctuation',
+      'Critical Thinking': 'Assess analysis, synthesis, and evaluation of ideas'
+    };
+    
+    // Generate a preliminary score using the same grading function
+    try {
+      console.log(`Generating preview score for student ${studentId} on assignment ${assignmentId}`);
+      
+      // Use the same grading function but with a shorter timeout
+      const previewPromise = gradeSubmission(text, rubric);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Preview scoring timed out after 10 seconds')), 10000)
+      );
+      
+      // Race between grading and timeout
+      const feedback = await Promise.race([previewPromise, timeoutPromise])
+        .catch(error => {
+          console.error('Error during preview scoring:', error.message);
+          // If there's an error, use fallback grading
+          return generateFallbackGrading(text, rubric);
+        });
+      
+      // Extract a total score from the feedback
+      const totalScore = feedback.totalScore || 
+        Object.values(feedback.rubricFeedback || {}).reduce((sum, item) => sum + (item.score || 0), 0) / 
+        Object.keys(feedback.rubricFeedback || {}).length || 70;
+      
+      // Return the preview score
+      res.json({
+        status: 'success',
+        message: 'Preview score generated successfully',
+        data: {
+          score: Math.round(totalScore),
+          feedback: feedback
+        }
+      });
+      
+    } catch (error) {
+      console.error('Preview scoring error:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to generate preview score',
+        error: error.message
+      });
+    }
+  } catch (error) {
+    console.error('Preview endpoint error:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error generating preview',
+      error: error.message
+    });
+  }
 });
 
 // Updated gradeSubmission function with improved error handling
