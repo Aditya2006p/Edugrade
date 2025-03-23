@@ -61,6 +61,30 @@ const assignmentsRouter = express.Router();
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+// Initialize global assignments with default data if empty
+if (!global.assignments || global.assignments.length === 0) {
+  global.assignments = [
+    { 
+      id: 1, 
+      title: 'Math Assignment', 
+      description: 'Solve algebra problems', 
+      dueDate: '2025-04-01', 
+      hasAttachment: false,
+      teacherId: 'teacher1', 
+      createdAt: '2023-01-01'
+    },
+    { 
+      id: 2, 
+      title: 'English Essay', 
+      description: 'Write a 5-paragraph essay', 
+      dueDate: '2025-04-15', 
+      hasAttachment: false,
+      teacherId: 'teacher1',
+      createdAt: '2023-01-02'
+    }
+  ];
+}
+
 // GET all assignments
 assignmentsRouter.get('/', (req, res) => {
   if (global.assignments && global.assignments.length > 0) {
@@ -78,6 +102,25 @@ assignmentsRouter.get('/', (req, res) => {
     data: [
       { id: 1, title: 'Math Assignment', description: 'Solve algebra problems', dueDate: '2025-04-01', hasAttachment: false },
       { id: 2, title: 'English Essay', description: 'Write a 5-paragraph essay', dueDate: '2025-04-15', hasAttachment: false }
+    ]
+  });
+});
+
+// GET assignments for a specific teacher
+assignmentsRouter.get('/teacher/:teacherId', (req, res) => {
+  const teacherId = req.params.teacherId;
+  
+  // Filter assignments for this teacher
+  const teacherAssignments = global.assignments.filter(
+    assignment => assignment.teacherId === teacherId
+  );
+  
+  res.json({
+    status: 'success',
+    message: 'Teacher assignments retrieved successfully',
+    data: teacherAssignments.length > 0 ? teacherAssignments : [
+      { id: 1, title: 'Math Assignment', description: 'Solve algebra problems', dueDate: '2025-04-01', hasAttachment: false, teacherId },
+      { id: 2, title: 'English Essay', description: 'Write a 5-paragraph essay', dueDate: '2025-04-15', hasAttachment: false, teacherId }
     ]
   });
 });
@@ -115,7 +158,56 @@ assignmentsRouter.get('/:id', (req, res) => {
   });
 });
 
-// GET submissions for a specific student - This was missing and causing the dashboard to fail
+// POST create a new assignment
+assignmentsRouter.post('/', upload.single('assignmentFile'), (req, res) => {
+  try {
+    const { title, description, dueDate, rubric, teacherId } = req.body;
+    
+    // Create assignment object
+    const assignment = { 
+      id: Date.now(),
+      title, 
+      description, 
+      dueDate, 
+      rubric: rubric ? JSON.parse(rubric) : null,
+      createdAt: new Date(),
+      hasAttachment: !!req.file,
+      teacherId: teacherId || 'unknown'
+    };
+    
+    // Add file information if a file was uploaded
+    if (req.file) {
+      assignment.fileInfo = {
+        fileName: req.file.filename || `file-${Date.now()}`,
+        originalName: req.file.originalname,
+        fileType: req.file.mimetype,
+        fileSize: req.file.size
+      };
+    }
+    
+    // Ensure global assignments array exists
+    if (!global.assignments) {
+      global.assignments = [];
+    }
+    
+    global.assignments.push(assignment);
+    
+    res.status(201).json({ 
+      status: 'success',
+      message: 'Assignment created successfully',
+      data: assignment
+    });
+  } catch (error) {
+    console.error('Error creating assignment:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to create assignment',
+      error: error.message
+    });
+  }
+});
+
+// GET submissions for a specific student
 assignmentsRouter.get('/student/:studentId/submissions', (req, res) => {
   const studentId = req.params.studentId;
   
@@ -188,14 +280,15 @@ authRouter.post('/login', (req, res) => {
   // Simple login logic for demo
   if (email && password) {
     const userType = email.includes('teacher') ? 'teacher' : 'student';
+    const userId = email.split('@')[0]; // Use the username part as ID
     
     res.json({
       status: 'success',
       message: 'Login successful',
       data: {
-        id: `user-${Date.now()}`,
+        id: userId,
         email,
-        name: email.split('@')[0],
+        name: userId,
         role: userType
       }
     });
@@ -212,11 +305,13 @@ authRouter.post('/register', (req, res) => {
   const { name, email, password, role } = req.body;
   
   if (name && email && password && role) {
+    const userId = email.split('@')[0]; // Use the username part as ID
+    
     res.status(201).json({
       status: 'success',
       message: 'Registration successful',
       data: {
-        id: `user-${Date.now()}`,
+        id: userId,
         name,
         email,
         role

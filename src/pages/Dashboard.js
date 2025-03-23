@@ -10,17 +10,29 @@ const Dashboard = ({ user }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
+  const [usedMockData, setUsedMockData] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Try to fetch assignments, but gracefully handle errors
+        // Try to fetch assignments based on user role
         try {
-          const assignmentsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}`);
-          const assignmentsData = await assignmentsResponse.json();
+          let assignmentsData;
           
-          if (assignmentsData.status === 'success') {
+          if (user.role === 'teacher') {
+            // Use the teacher-specific endpoint for teachers
+            const assignmentsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}/teacher/${user.id}`);
+            assignmentsData = await assignmentsResponse.json();
+          } else {
+            // Use the standard endpoint for students
+            const assignmentsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}`);
+            assignmentsData = await assignmentsResponse.json();
+          }
+          
+          if (assignmentsData && assignmentsData.status === 'success') {
             setAssignments(assignmentsData.data);
+          } else {
+            throw new Error('Failed to fetch assignments');
           }
         } catch (err) {
           console.log("Error fetching assignments:", err);
@@ -29,13 +41,15 @@ const Dashboard = ({ user }) => {
             { id: 1, title: 'Math Assignment', description: 'Solve algebra problems', dueDate: '2025-04-01', hasAttachment: false },
             { id: 2, title: 'English Essay', description: 'Write a 5-paragraph essay', dueDate: '2025-04-15', hasAttachment: false }
           ]);
+          setUsedMockData(true);
         }
         
         // Check if we should use mock data
         const isDemoAccount = user.username === 'teacher1' || user.username === 'student1';
-        const useTemporaryMockData = true; // Set this to true to use mock data for all users temporarily
+        // Only use temporary mock data if we're in development
+        const useTemporaryMockData = false; 
         
-        if (isDemoAccount || useTemporaryMockData) {
+        if (isDemoAccount || useTemporaryMockData || usedMockData) {
           // For demo purposes or temporary solution, we'll create mock submission and feedback data
           if (user.role === 'student') {
             // Mock submissions data for student
@@ -72,7 +86,7 @@ const Dashboard = ({ user }) => {
         // For real user accounts, fetch actual submissions
         if (user.role === 'student') {
           try {
-            // Fetch student's submissions using the new endpoint
+            // Fetch student's submissions using the endpoint
             const submissionsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}/student/${user.id}/submissions`);
             const submissionsData = await submissionsResponse.json();
             
@@ -99,23 +113,47 @@ const Dashboard = ({ user }) => {
             console.error('Error fetching student submissions:', submissionError);
             setSubmissions([]);
             setFeedback([]);
+            setUsedMockData(true);
           }
         } else if (user.role === 'teacher') {
-          // For teachers, we don't need to fetch all submissions here
-          // They'll see submissions per assignment in the assignment detail view
-          setSubmissions([]);
+          // For teachers, fetch recent submissions
+          try {
+            // We'll fetch submissions for each assignment
+            const submissionPromises = assignments.map(assignment => 
+              fetch(`${config.ENDPOINTS.ASSIGNMENTS}/${assignment.id}/submissions`)
+                .then(res => res.json())
+            );
+            
+            if (submissionPromises.length > 0) {
+              const submissionResponses = await Promise.all(submissionPromises);
+              const allSubmissions = submissionResponses
+                .filter(response => response.status === 'success')
+                .flatMap(response => response.data);
+              
+              // Sort by date and take the most recent ones
+              const sortedSubmissions = allSubmissions.sort((a, b) => 
+                new Date(b.submissionDate) - new Date(a.submissionDate)
+              ).slice(0, 10); // Limit to 10 most recent
+              
+              setSubmissions(sortedSubmissions);
+            }
+          } catch (error) {
+            console.error('Error fetching teacher submissions:', error);
+            setUsedMockData(true);
+          }
         }
 
       } catch (error) {
         setError('Failed to load dashboard data');
         console.error(error);
+        setUsedMockData(true);
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [user.role, user.username, user.id]);
+  }, [user.role, user.username, user.id, usedMockData]);
 
   if (loading) {
     return <div className="loading-spinner">Loading dashboard...</div>;
@@ -135,6 +173,12 @@ const Dashboard = ({ user }) => {
           </Link>
         )}
       </div>
+      
+      {usedMockData && (
+        <div className="mock-data-notice">
+          Using sample data. Your actual assignments will appear here when the backend is fully connected.
+        </div>
+      )}
       
       {user.role === 'teacher' ? (
         <TeacherDashboard 
