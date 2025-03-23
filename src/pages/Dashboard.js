@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/Dashboard.css';
+import config from '../config';
 
 const Dashboard = ({ user }) => {
   const [assignments, setAssignments] = useState([]);
@@ -14,7 +15,7 @@ const Dashboard = ({ user }) => {
     const fetchDashboardData = async () => {
       try {
         // Fetch assignments
-        const assignmentsResponse = await fetch('http://localhost:5001/api/assignments');
+        const assignmentsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}`);
         const assignmentsData = await assignmentsResponse.json();
         
         if (assignmentsData.status === 'success') {
@@ -58,7 +59,7 @@ const Dashboard = ({ user }) => {
           if (user.role === 'student') {
             try {
               // Fetch student's submissions using the new endpoint
-              const submissionsResponse = await fetch(`http://localhost:5001/api/assignments/student/${user.id}/submissions`);
+              const submissionsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}/student/${user.id}/submissions`);
               const submissionsData = await submissionsResponse.json();
               
               if (submissionsData.status === 'success') {
@@ -67,7 +68,7 @@ const Dashboard = ({ user }) => {
                 // Fetch feedback for graded submissions
                 const gradedSubmissions = submissionsData.data.filter(sub => sub.status === 'graded');
                 const feedbackPromises = gradedSubmissions.map(submission =>
-                  fetch(`http://localhost:5001/api/feedback/submission/${submission.id}`)
+                  fetch(`${config.ENDPOINTS.FEEDBACK}/submission/${submission.id}`)
                     .then(res => res.json())
                 );
                 
