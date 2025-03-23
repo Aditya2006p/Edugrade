@@ -6,13 +6,24 @@
 const isDevelopment = typeof window !== 'undefined' && 
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
+// Force production mode if hostname is not localhost (netlify deployment)
+const isNetlify = typeof window !== 'undefined' && 
+  window.location.hostname.includes('netlify.app');
+
 // Fallback to environment variable if not in browser
 const isDevelopmentEnv = process.env.NODE_ENV === 'development';
 
-// Simplify the API path for Netlify - they handle routing for us
+// Use different API paths depending on environment
 const API_BASE_URL = isDevelopment || isDevelopmentEnv
   ? 'http://localhost:5001/api' 
   : '/.netlify/functions/api';
+
+console.log('Config: API Base URL set to', API_BASE_URL, {
+  isDevelopment,
+  isNetlify,
+  isDevelopmentEnv,
+  hostname: typeof window !== 'undefined' ? window.location.hostname : 'not in browser'
+});
 
 export default {
   API_BASE_URL,

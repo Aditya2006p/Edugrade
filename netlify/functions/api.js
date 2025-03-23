@@ -14,9 +14,9 @@ dotenv.config();
 const app = express();
 
 // In-memory data store (would be replaced by a database in production)
-global.submissions = [];
-global.feedback = [];
-global.assignments = [];
+global.submissions = global.submissions || [];
+global.feedback = global.feedback || [];
+global.assignments = global.assignments || [];
 
 // Middleware
 app.use(cors());
@@ -53,6 +53,25 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'EduGrade API is running' });
 });
 
+// Test route to verify student data is working
+app.get('/test/student', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Student test data retrieved successfully',
+    data: {
+      assignments: [
+        { id: 1, title: 'Math Assignment', description: 'Solve algebra problems', dueDate: '2025-04-01', hasAttachment: false },
+        { id: 2, title: 'English Essay', description: 'Write a 5-paragraph essay', dueDate: '2025-04-15', hasAttachment: false }
+      ],
+      submissions: [
+        { id: 101, assignmentId: 1, submissionDate: '2025-03-25', status: 'graded' },
+        { id: 102, assignmentId: 2, submissionDate: '2025-03-26', status: 'pending' }
+      ],
+      netlifySaysHello: true
+    }
+  });
+});
+
 // Instead of importing from relative paths, we'll define routes here
 // Start with assignments routes
 const assignmentsRouter = express.Router();
@@ -63,6 +82,7 @@ const upload = multer({ storage });
 
 // Initialize global assignments with default data if empty
 if (!global.assignments || global.assignments.length === 0) {
+  console.log('Initializing default assignments in Netlify function');
   global.assignments = [
     { 
       id: 1, 
@@ -70,7 +90,7 @@ if (!global.assignments || global.assignments.length === 0) {
       description: 'Solve algebra problems', 
       dueDate: '2025-04-01', 
       hasAttachment: false,
-      teacherId: 'teacher1', 
+      teacherId: 'teacher1',
       createdAt: '2023-01-01'
     },
     { 
