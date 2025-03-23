@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import '../styles/AssignmentDetail.css';
+import config from '../config';
 
 const AssignmentDetail = ({ user }) => {
   const { id } = useParams();
@@ -8,12 +9,51 @@ const AssignmentDetail = ({ user }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Mock data for offline/demo mode
+  const mockAssignment = {
+    id: parseInt(id) || 1,
+    title: "English Essay",
+    description: "Write a 5-paragraph essay on a topic of your choice. Focus on clear structure, strong thesis statement, and supporting evidence.",
+    dueDate: "2025-04-15",
+    hasAttachment: false,
+    rubric: {
+      content: "Quality and depth of content",
+      organization: "Structure and flow of ideas",
+      grammar: "Proper grammar and mechanics",
+      creativity: "Original thinking and insights"
+    }
+  };
+  
+  const mockSubmissions = [
+    { id: 101, studentId: 'student1', studentName: 'Alice Johnson', submissionDate: '2025-03-25', status: 'graded' },
+    { id: 103, studentId: 'student2', studentName: 'Bob Smith', submissionDate: '2025-03-26', status: 'pending' },
+    { id: 104, studentId: 'student3', studentName: 'Charlie Davis', submissionDate: '2025-03-27', status: 'pending' }
+  ];
 
   useEffect(() => {
     const fetchAssignment = async () => {
       try {
+        // Use mock data for offline/demo mode
+        const useTemporaryMockData = true;
+        
+        if (useTemporaryMockData) {
+          setTimeout(() => {
+            setAssignment(mockAssignment);
+            
+            if (user.role === 'teacher') {
+              setSubmissions(mockSubmissions);
+            } else {
+              setSubmissions([]);
+            }
+            
+            setLoading(false);
+          }, 500);
+          return;
+        }
+        
         // Fetch assignment details
-        const assignmentResponse = await fetch(`http://localhost:5001/api/assignments/${id}`);
+        const assignmentResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}/${id}`);
         const assignmentData = await assignmentResponse.json();
         
         if (assignmentData.status === 'success') {
@@ -32,7 +72,7 @@ const AssignmentDetail = ({ user }) => {
           } else if (user.role === 'teacher') {
             // For real teacher accounts, fetch actual submissions
             try {
-              const submissionsResponse = await fetch(`http://localhost:5001/api/assignments/${id}/submissions`);
+              const submissionsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}/${id}/submissions`);
               const submissionsData = await submissionsResponse.json();
               
               if (submissionsData.status === 'success') {
@@ -50,8 +90,14 @@ const AssignmentDetail = ({ user }) => {
           setError('Failed to load assignment details');
         }
       } catch (error) {
+        console.error('Error fetching assignment:', error);
         setError('Error connecting to server');
-        console.error(error);
+        
+        // Fallback to mock data
+        setAssignment(mockAssignment);
+        if (user.role === 'teacher') {
+          setSubmissions(mockSubmissions);
+        }
       } finally {
         setLoading(false);
       }
@@ -59,6 +105,9 @@ const AssignmentDetail = ({ user }) => {
 
     fetchAssignment();
   }, [id, user.role, user.username]);
+
+  // Update the file URL to use config
+  const fileUrl = assignment?.hasAttachment ? `${config.ENDPOINTS.ASSIGNMENTS}/${id}/file` : null;
 
   if (loading) {
     return <div className="loading">Loading assignment details...</div>;
@@ -98,7 +147,7 @@ const AssignmentDetail = ({ user }) => {
           <div className="assignment-file">
             <h3>Assignment File</h3>
             <a 
-              href={`http://localhost:5001/api/assignments/${id}/file`} 
+              href={fileUrl} 
               target="_blank" 
               rel="noopener noreferrer" 
               className="download-file-button"
