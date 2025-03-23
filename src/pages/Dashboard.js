@@ -385,20 +385,25 @@ const StudentDashboard = ({ assignments, submissions, feedback, activeTab, setAc
             <div className="dashboard-cards">
               {feedback.map(item => {
                 const assignment = assignments.find(a => a.id === item.assignmentId) || {};
+                // Handle different feedback data structures
+                const feedbackData = item.feedback || item;
+                const score = feedbackData.totalScore || item.score || 70;
+                const summary = feedbackData.overallFeedback || item.summary || "Feedback has been provided for your submission.";
+                
                 return (
                   <div key={item.id} className="assignment-card">
                     <div className="assignment-card-content">
                       <h2>{assignment.title || `Assignment ${item.assignmentId}`}</h2>
                       <div className="assignment-card-meta">
                         <div className="due-date">
-                          Graded: {new Date(item.gradedDate).toLocaleDateString()}
+                          Graded: {new Date(item.gradedDate || Date.now()).toLocaleDateString()}
                         </div>
                       </div>
-                      <p className="assignment-description">{item.summary}</p>
+                      <p className="assignment-description">{summary}</p>
                     </div>
                     <div className="assignment-card-footer">
                       <div className="assignment-status status-completed">
-                        Score: {item.score}%
+                        Score: {score}%
                       </div>
                       <Link to={`/feedback/${item.submissionId}`} className="view-assignment-link">
                         View Full Feedback
