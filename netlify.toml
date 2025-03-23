@@ -1,0 +1,24 @@
+# Netlify configuration file
+
+[build]
+  # Directory with the built frontend
+  publish = "build"
+  # No build command needed since we already ran npm run build
+  command = ""
+
+# Redirect all requests to index.html for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  
+# Set environment variables
+[build.environment]
+  NODE_VERSION = "16"
+  
+# Special headers for security 
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block" 
