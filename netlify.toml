@@ -3,8 +3,8 @@
 [build]
   # Directory with the built frontend
   publish = "build"
-  # No build command needed since we already ran npm run build
-  command = ""
+  # Build command to create the React build and install function dependencies
+  command = "npm run build && cd netlify/functions && npm install"
 
 # Redirect all requests to index.html for SPA routing
 [[redirects]]
