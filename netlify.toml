@@ -5,8 +5,17 @@
   publish = "build"
   # Build command to create the React build and install function dependencies
   command = "CI=false npm run build && cd netlify/functions && npm install"
+  # Specify the functions directory
+  functions = "netlify/functions"
 
-# Special redirect for the Netlify function API
+# More specific redirect for the API function
+[[redirects]]
+  from = "/.netlify/functions/api"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true
+
+# Handle all paths under the API
 [[redirects]]
   from = "/.netlify/functions/api/*"
   to = "/.netlify/functions/api"
