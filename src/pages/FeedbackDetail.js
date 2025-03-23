@@ -5,7 +5,6 @@ import '../styles/FeedbackDetail.css';
 const FeedbackDetail = ({ user }) => {
   const { id } = useParams();
   const [feedback, setFeedback] = useState(null);
-  const [submission, setSubmission] = useState(null);
   const [assignment, setAssignment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,22 +29,6 @@ const FeedbackDetail = ({ user }) => {
               }
             } catch (assignmentError) {
               console.error('Error fetching assignment details:', assignmentError);
-            }
-          }
-          
-          // Fetch submission if available
-          if (feedbackData.data.submissionId) {
-            try {
-              // This is just a placeholder as we don't have a direct endpoint to get a submission by ID
-              // In a real app, you'd fetch from an endpoint like:
-              // const submissionResponse = await fetch(`http://localhost:5001/api/submissions/${feedbackData.data.submissionId}`);
-              setSubmission({
-                id: feedbackData.data.submissionId,
-                assignmentId: feedbackData.data.assignmentId,
-                submissionDate: feedbackData.data.submissionDate
-              });
-            } catch (submissionError) {
-              console.error('Error fetching submission details:', submissionError);
             }
           }
         } else {
@@ -85,7 +68,6 @@ const FeedbackDetail = ({ user }) => {
   const keyStrengths = feedback.feedback.keyStrengths || [];
   const improvementAreas = feedback.feedback.improvementAreas || [];
   const learningRecommendations = feedback.feedback.learningRecommendations || [];
-  const differentialAnalysis = feedback.feedback.differentialAnalysis || {};
   
   // Handle legacy feedback format
   const legacyFeedback = Object.entries(feedback.feedback)

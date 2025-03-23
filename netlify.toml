@@ -4,7 +4,7 @@
   # Directory with the built frontend
   publish = "build"
   # Build command to create the React build and install function dependencies
-  command = "npm run build && cd netlify/functions && npm install"
+  command = "CI=false npm run build && cd netlify/functions && npm install"
 
 # Redirect all requests to index.html for SPA routing
 [[redirects]]
@@ -15,6 +15,7 @@
 # Set environment variables
 [build.environment]
   NODE_VERSION = "16"
+  CI = "false"
   
 # Special headers for security 
 [[headers]]
