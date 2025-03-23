@@ -110,6 +110,22 @@ assignmentsRouter.get('/:id', (req, res) => {
   });
 });
 
+// GET submissions for a specific student - This was missing and causing the dashboard to fail
+assignmentsRouter.get('/student/:studentId/submissions', (req, res) => {
+  const studentId = req.params.studentId;
+  
+  // Filter submissions for this student
+  const studentSubmissions = global.submissions.filter(
+    submission => submission.studentId === studentId
+  );
+  
+  res.json({
+    status: 'success',
+    message: 'Student submissions retrieved successfully',
+    data: studentSubmissions
+  });
+});
+
 // Basic feedback routes
 const feedbackRouter = express.Router();
 

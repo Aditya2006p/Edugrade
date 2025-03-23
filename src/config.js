@@ -18,4 +18,4 @@ export default {
     AUTH: `${API_BASE_URL}/auth`,
     HEALTH: `${API_BASE_URL}/health`
   }
-}; 
+};
