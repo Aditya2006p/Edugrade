@@ -62,6 +62,25 @@ router.get('/', (req, res) => {
   });
 });
 
+// GET assignments for a specific teacher
+router.get('/teacher/:teacherId', (req, res) => {
+  const teacherId = req.params.teacherId;
+  
+  // Filter assignments for this teacher
+  const teacherAssignments = global.assignments ? global.assignments.filter(
+    assignment => assignment.teacherId === teacherId
+  ) : [];
+  
+  res.json({
+    status: 'success',
+    message: 'Teacher assignments retrieved successfully',
+    data: teacherAssignments.length > 0 ? teacherAssignments : [
+      { id: 1, title: 'Math Assignment', description: 'Solve algebra problems', dueDate: '2025-04-01', hasAttachment: false, teacherId },
+      { id: 2, title: 'English Essay', description: 'Write a 5-paragraph essay', dueDate: '2025-04-15', hasAttachment: false, teacherId }
+    ]
+  });
+});
+
 // GET a single assignment
 router.get('/:id', (req, res) => {
   const assignmentId = parseInt(req.params.id);
@@ -100,7 +119,7 @@ router.get('/:id', (req, res) => {
 // POST create a new assignment
 router.post('/', assignmentUpload.single('assignmentFile'), (req, res) => {
   try {
-    const { title, description, dueDate, rubric } = req.body;
+    const { title, description, dueDate, rubric, teacherId } = req.body;
     
     // Create assignment object
     const assignment = { 
@@ -110,7 +129,8 @@ router.post('/', assignmentUpload.single('assignmentFile'), (req, res) => {
       dueDate, 
       rubric: rubric ? JSON.parse(rubric) : null,
       createdAt: new Date(),
-      hasAttachment: !!req.file
+      hasAttachment: !!req.file,
+      teacherId: teacherId || 'unknown'
     };
     
     // Add file information if a file was uploaded
