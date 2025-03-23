@@ -48,6 +48,11 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'EduGrade API is running' });
 });
 
+// Add a root path response
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'EduGrade API is running at /.netlify/functions/api' });
+});
+
 // Instead of importing from relative paths, we'll define routes here
 // Start with assignments routes
 const assignmentsRouter = express.Router();
@@ -225,7 +230,12 @@ authRouter.post('/register', (req, res) => {
   }
 });
 
-// Use routes
+// Use routes - adding /api prefix to match what the frontend expects
+app.use('/api/assignments', assignmentsRouter);
+app.use('/api/feedback', feedbackRouter);
+app.use('/api/auth', authRouter);
+
+// Create duplicates without the /api prefix for backward compatibility
 app.use('/assignments', assignmentsRouter);
 app.use('/feedback', feedbackRouter);
 app.use('/auth', authRouter);

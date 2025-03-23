@@ -6,6 +6,13 @@
   # Build command to create the React build and install function dependencies
   command = "CI=false npm run build && cd netlify/functions && npm install"
 
+# Redirect API requests to the Netlify function
+[[redirects]]
+  from = "/.netlify/functions/api/*"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true
+
 # Redirect all requests to index.html for SPA routing
 [[redirects]]
   from = "/*"
