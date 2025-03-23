@@ -2,14 +2,17 @@
  * Configuration file for API endpoints
  */
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+// In a browser environment, we can check the hostname explicitly
+const isDevelopment = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-// In development, use localhost
-// In production on Netlify, use the /.netlify/functions/api/api path with double /api
-// This is because our Netlify function routes use /api prefix internally
-const API_BASE_URL = isDevelopment 
+// Fallback to environment variable if not in browser
+const isDevelopmentEnv = process.env.NODE_ENV === 'development';
+
+// Simplify the API path for Netlify - they handle routing for us
+const API_BASE_URL = isDevelopment || isDevelopmentEnv
   ? 'http://localhost:5001/api' 
-  : '/.netlify/functions/api/api';
+  : '/.netlify/functions/api';
 
 export default {
   API_BASE_URL,

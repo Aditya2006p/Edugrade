@@ -43,14 +43,14 @@ try {
 // Make genAI available globally
 global.genAI = genAI;
 
-// Basic health route
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'EduGrade API is running' });
-});
-
 // Add a root path response
 app.get('/', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'EduGrade API is running at /.netlify/functions/api' });
+});
+
+// Basic health route
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'EduGrade API is running' });
 });
 
 // Instead of importing from relative paths, we'll define routes here
@@ -230,12 +230,7 @@ authRouter.post('/register', (req, res) => {
   }
 });
 
-// Use routes - adding /api prefix to match what the frontend expects
-app.use('/api/assignments', assignmentsRouter);
-app.use('/api/feedback', feedbackRouter);
-app.use('/api/auth', authRouter);
-
-// Create duplicates without the /api prefix for backward compatibility
+// Use routes - simple structure without /api prefix
 app.use('/assignments', assignmentsRouter);
 app.use('/feedback', feedbackRouter);
 app.use('/auth', authRouter);
