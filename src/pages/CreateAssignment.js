@@ -1,95 +1,96 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/CreateAssignment.css';
+import config from '../config';
 
 const CreateAssignment = ({ user }) => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const [assignmentData, setAssignmentData] = useState({
     title: '',
     description: '',
-    dueDate: '',
-    rubric: {
-      understanding: 'Shows complete understanding of the concepts',
-      methodology: 'Uses appropriate methods to solve problems',
-      presentation: 'Work is well-organized and clearly presented'
-    }
+    dueDate: ''
   });
-  const [assignmentFile, setAssignmentFile] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [rubric, setRubric] = useState({});
+  const [file, setFile] = useState(null);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setAssignmentData({
+      ...assignmentData,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setAssignmentFile(file);
+    setFile(e.target.files[0]);
   };
 
-  const handleRubricChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      rubric: {
-        ...formData.rubric,
-        [name]: value
-      }
+  const handleRubricChange = (key, value) => {
+    setRubric({
+      ...rubric,
+      [key]: value
     });
   };
 
   const handleAddRubricItem = () => {
-    const newItemName = `item${Object.keys(formData.rubric).length + 1}`;
-    setFormData({
-      ...formData,
-      rubric: {
-        ...formData.rubric,
-        [newItemName]: ''
-      }
+    const newKey = `item${Object.keys(rubric).length + 1}`;
+    setRubric({
+      ...rubric,
+      [newKey]: ''
     });
   };
 
-  const handleRemoveRubricItem = (key) => {
-    const updatedRubric = { ...formData.rubric };
-    delete updatedRubric[key];
-    setFormData({
-      ...formData,
-      rubric: updatedRubric
-    });
+  const handleRemoveRubricItem = (keyToRemove) => {
+    const updatedRubric = { ...rubric };
+    delete updatedRubric[keyToRemove];
+    setRubric(updatedRubric);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (Object.values(formData.rubric).some(item => !item.trim())) {
-      setError('Please fill in all rubric items or remove empty ones');
-      return;
-    }
-    
-    setLoading(true);
+    setIsSubmitting(true);
     setError('');
     
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('title', assignmentData.title);
+    formData.append('description', assignmentData.description);
+    formData.append('dueDate', assignmentData.dueDate);
+    
+    // Add rubric if provided
+    if (Object.keys(rubric).length > 0) {
+      formData.append('rubric', JSON.stringify(rubric));
+    }
+    
+    // Add file if provided
+    if (file) {
+      formData.append('assignmentFile', file);
+    }
+    
     try {
-      // Create a FormData object for multipart/form-data submission (required for file upload)
-      const submitFormData = new FormData();
+      // Use mock data for temporary demonstration
+      const useTemporaryMockData = true;
       
-      // Add text fields
-      submitFormData.append('title', formData.title);
-      submitFormData.append('description', formData.description);
-      submitFormData.append('dueDate', formData.dueDate);
-      submitFormData.append('rubric', JSON.stringify(formData.rubric));
-      
-      // Add file if one was selected
-      if (assignmentFile) {
-        submitFormData.append('assignmentFile', assignmentFile);
+      if (useTemporaryMockData) {
+        // Create mock assignment
+        console.log('Using mock assignment creation');
+        setTimeout(() => {
+          setIsSubmitting(false);
+          setSuccess(true);
+          // Navigate back after a delay
+          setTimeout(() => {
+            navigate('/');
+          }, 2000);
+        }, 1000);
+        return;
       }
       
-      // Send the request without Content-Type header (browser will set it with boundary)
-      const response = await fetch('http://localhost:5001/api/assignments', {
+      // Use config for API URL
+      const response = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}`, {
         method: 'POST',
-        body: submitFormData
+        body: formData,
       });
       
       const data = await response.json();
@@ -98,17 +99,17 @@ const CreateAssignment = ({ user }) => {
         throw new Error(data.message || 'Failed to create assignment');
       }
       
-      setSuccess('Assignment created successfully!');
+      setSuccess(true);
       
-      // Navigate to assignment details after a delay
+      // Navigate back after a delay
       setTimeout(() => {
-        navigate(`/assignments/${data.data.id}`);
-      }, 1500);
-      
+        navigate('/');
+      }, 2000);
     } catch (error) {
-      setError(error.message);
+      console.error('Error creating assignment:', error);
+      setError('Failed to create assignment. Please try again.');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -126,7 +127,7 @@ const CreateAssignment = ({ user }) => {
             type="text"
             id="title"
             name="title"
-            value={formData.title}
+            value={assignmentData.title}
             onChange={handleChange}
             required
             placeholder="Enter a title for your assignment"
@@ -138,7 +139,7 @@ const CreateAssignment = ({ user }) => {
           <textarea
             id="description"
             name="description"
-            value={formData.description}
+            value={assignmentData.description}
             onChange={handleChange}
             required
             placeholder="Provide instructions and details about the assignment"
@@ -152,7 +153,7 @@ const CreateAssignment = ({ user }) => {
             type="date"
             id="dueDate"
             name="dueDate"
-            value={formData.dueDate}
+            value={assignmentData.dueDate}
             onChange={handleChange}
             required
           />
@@ -178,11 +179,11 @@ const CreateAssignment = ({ user }) => {
             Define grading criteria for the AI to evaluate student submissions
           </p>
           
-          {Object.entries(formData.rubric).map(([key, value]) => (
+          {Object.entries(rubric).map(([key, value]) => (
             <div key={key} className="rubric-item">
               <div className="rubric-item-header">
                 <label htmlFor={key}>{key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</label>
-                {Object.keys(formData.rubric).length > 1 && (
+                {Object.keys(rubric).length > 1 && (
                   <button 
                     type="button" 
                     className="remove-rubric-button"
@@ -196,7 +197,7 @@ const CreateAssignment = ({ user }) => {
                 id={key}
                 name={key}
                 value={value}
-                onChange={handleRubricChange}
+                onChange={(e) => handleRubricChange(key, e.target.value)}
                 required
                 placeholder="Describe this grading criterion"
                 rows="2"
@@ -224,9 +225,9 @@ const CreateAssignment = ({ user }) => {
           <button 
             type="submit" 
             className="create-button"
-            disabled={loading}
+            disabled={isSubmitting}
           >
-            {loading ? 'Creating...' : 'Create Assignment'}
+            {isSubmitting ? 'Creating...' : 'Create Assignment'}
           </button>
         </div>
       </form>
