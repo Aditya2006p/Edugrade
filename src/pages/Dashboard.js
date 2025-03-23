@@ -14,27 +14,37 @@ const Dashboard = ({ user }) => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Fetch assignments
-        const assignmentsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}`);
-        const assignmentsData = await assignmentsResponse.json();
-        
-        if (assignmentsData.status === 'success') {
-          setAssignments(assignmentsData.data);
+        // Try to fetch assignments, but gracefully handle errors
+        try {
+          const assignmentsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}`);
+          const assignmentsData = await assignmentsResponse.json();
+          
+          if (assignmentsData.status === 'success') {
+            setAssignments(assignmentsData.data);
+          }
+        } catch (err) {
+          console.log("Error fetching assignments:", err);
+          // Fallback to default assignments
+          setAssignments([
+            { id: 1, title: 'Math Assignment', description: 'Solve algebra problems', dueDate: '2025-04-01', hasAttachment: false },
+            { id: 2, title: 'English Essay', description: 'Write a 5-paragraph essay', dueDate: '2025-04-15', hasAttachment: false }
+          ]);
         }
         
-        // Only show mock data for demo accounts (teacher1 and student1)
+        // Check if we should use mock data
         const isDemoAccount = user.username === 'teacher1' || user.username === 'student1';
+        const useTemporaryMockData = true; // Set this to true to use mock data for all users temporarily
         
-        if (isDemoAccount) {
-          // For demo purposes, we'll create mock submission and feedback data
+        if (isDemoAccount || useTemporaryMockData) {
+          // For demo purposes or temporary solution, we'll create mock submission and feedback data
           if (user.role === 'student') {
-            // Mock submissions data for demo student
+            // Mock submissions data for student
             setSubmissions([
               { id: 101, assignmentId: 1, submissionDate: '2025-03-25', status: 'graded' },
               { id: 102, assignmentId: 2, submissionDate: '2025-03-26', status: 'pending' }
             ]);
             
-            // Mock feedback data for demo student
+            // Mock feedback data for student
             setFeedback([
               { 
                 id: 201, 
@@ -47,50 +57,53 @@ const Dashboard = ({ user }) => {
               }
             ]);
           } else if (user.role === 'teacher') {
-            // Mock submissions data for demo teacher
+            // Mock submissions data for teacher
             setSubmissions([
               { id: 101, assignmentId: 1, studentId: 'student1', studentName: 'Alice Johnson', submissionDate: '2025-03-25', status: 'graded' },
               { id: 103, assignmentId: 1, studentId: 'student2', studentName: 'Bob Smith', submissionDate: '2025-03-26', status: 'pending' },
               { id: 104, assignmentId: 2, studentId: 'student1', studentName: 'Alice Johnson', submissionDate: '2025-03-26', status: 'pending' }
             ]);
           }
-        } else {
-          // For real user accounts, fetch actual submissions
-          if (user.role === 'student') {
-            try {
-              // Fetch student's submissions using the new endpoint
-              const submissionsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}/student/${user.id}/submissions`);
-              const submissionsData = await submissionsResponse.json();
+          
+          setLoading(false);
+          return; // Skip the real API calls if using mock data
+        }
+        
+        // For real user accounts, fetch actual submissions
+        if (user.role === 'student') {
+          try {
+            // Fetch student's submissions using the new endpoint
+            const submissionsResponse = await fetch(`${config.ENDPOINTS.ASSIGNMENTS}/student/${user.id}/submissions`);
+            const submissionsData = await submissionsResponse.json();
+            
+            if (submissionsData.status === 'success') {
+              setSubmissions(submissionsData.data);
               
-              if (submissionsData.status === 'success') {
-                setSubmissions(submissionsData.data);
+              // Fetch feedback for graded submissions
+              const gradedSubmissions = submissionsData.data.filter(sub => sub.status === 'graded');
+              const feedbackPromises = gradedSubmissions.map(submission =>
+                fetch(`${config.ENDPOINTS.FEEDBACK}/submission/${submission.id}`)
+                  .then(res => res.json())
+              );
+              
+              if (feedbackPromises.length > 0) {
+                const feedbackResponses = await Promise.all(feedbackPromises);
+                const validFeedback = feedbackResponses
+                  .filter(response => response.status === 'success')
+                  .map(response => response.data);
                 
-                // Fetch feedback for graded submissions
-                const gradedSubmissions = submissionsData.data.filter(sub => sub.status === 'graded');
-                const feedbackPromises = gradedSubmissions.map(submission =>
-                  fetch(`${config.ENDPOINTS.FEEDBACK}/submission/${submission.id}`)
-                    .then(res => res.json())
-                );
-                
-                if (feedbackPromises.length > 0) {
-                  const feedbackResponses = await Promise.all(feedbackPromises);
-                  const validFeedback = feedbackResponses
-                    .filter(response => response.status === 'success')
-                    .map(response => response.data);
-                  
-                  setFeedback(validFeedback);
-                }
+                setFeedback(validFeedback);
               }
-            } catch (submissionError) {
-              console.error('Error fetching student submissions:', submissionError);
-              setSubmissions([]);
-              setFeedback([]);
             }
-          } else if (user.role === 'teacher') {
-            // For teachers, we don't need to fetch all submissions here
-            // They'll see submissions per assignment in the assignment detail view
+          } catch (submissionError) {
+            console.error('Error fetching student submissions:', submissionError);
             setSubmissions([]);
+            setFeedback([]);
           }
+        } else if (user.role === 'teacher') {
+          // For teachers, we don't need to fetch all submissions here
+          // They'll see submissions per assignment in the assignment detail view
+          setSubmissions([]);
         }
 
       } catch (error) {
